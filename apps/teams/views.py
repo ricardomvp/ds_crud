@@ -18,7 +18,7 @@ def show(request, team_id):
     team = Team.objects.filter(id=team_id)
     data = _get_request(team)
     if not data:
-        data={'request':'Team id Not found'}
+        data={'request':'Team is Not found'}
     return JsonResponse(data, safe=False)
 
 #Show all teams
@@ -156,6 +156,10 @@ def delete(request, teamname):
     except:
         data={'data' : 'Teamname not found'}
         return JsonResponse(data)
+    if team.active == False:
+         data={'data' : 'Team was deleted previosly'}
+         return JsonResponse(data)
+
     team.active = False
     team.save()
 
@@ -163,7 +167,10 @@ def delete(request, teamname):
 
 """
 Modify team
-structure -> {"name" : "TEAM_NAME_2_MODIFY", "new_name":"NEW_NAME", "new_image":"NEW_IMAGE"}
+structure -> {"name" : "TEAM_NAME_2_MODIFY",
+              "new_name":"NEW_NAME",
+              "new_image":"NEW_IMAGE",
+              }
 """
 def modify(request, teamname):
     #Check if dict has a correct structure
@@ -183,6 +190,11 @@ def modify(request, teamname):
         data={'data' : 'Teamname not found'}
         return JsonResponse(data)
 
+    if team.active == False:
+        data={'data' : 'Team is deleted'}
+        return JsonResponse(data)
+
+    #set modifications if they exist
     if 'new_name' in teamname:
         team.name = teamname['new_name']
     # if 'new_image' in teamname:

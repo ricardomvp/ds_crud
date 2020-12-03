@@ -19,5 +19,4 @@ urlpatterns = [
     path('delete/<str:teamname>', delete, name='delete'),
     # Modify team
     path('modify/<str:teamname>', modify, name='modify'),
-
 ]
