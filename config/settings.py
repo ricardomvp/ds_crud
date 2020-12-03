@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'apps.home',
+    'apps.teams',
+    #Custom User model
+    'apps.users'
 ]
 
 MIDDLEWARE = [
@@ -73,20 +78,29 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-DATABASES = {
-	'default': {
-    	'ENGINE': 'django.db.backends.postgresql',
-    	'NAME': 'postgres',
-    	'USER': 'postgres',
-    	'PASSWORD': 'postgres',
-    	'HOST': 'db',
-    	'PORT': 5432,
-	}
-}
+# DATABASES = {
+# 	'default': {
+#     	'ENGINE': 'django.db.backends.postgresql',
+#     	'NAME': 'postgres',
+#     	'USER': 'postgres',
+#     	'PASSWORD': 'postgres',
+#     	'HOST': 'db',
+#     	'PORT': 5432,
+# 	}
+# }
 
+DATABASES = {
+		 'default': {
+		 'ENGINE': 'django.db.backends.sqlite3',
+		 'NAME': str(BASE_DIR / 'db.sqlite3'),
+	     }
+         }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
+
+AUTH_USER_MODEL = 'users.User'
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -120,5 +134,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
 STATIC_URL = '/static/'
+STATICFILES_DIRS=(os.path.join(BASE_DIR,'static'),)
+STATIC_ROOT = os.path.normpath(os.path.join(BASE_DIR, 'staticfiles'))
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
