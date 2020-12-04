@@ -2,17 +2,19 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import User, TeamMate
+from .models import User, Profile
+from apps.teams.admin import MemberInline
 
-@admin.register(TeamMate)
-class ProfileTeamMate(admin.ModelAdmin):
+@admin.register(Profile)
+class ProfileProfile(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('user', 'is_user', 'is_admin')}),
     )
     readonly_fields=('is_owner',)
 
-class ProfileInlineTeamMate(admin.StackedInline):
-    model=TeamMate
+class ProfileInlineProfile(admin.StackedInline):
+    model=Profile
+    inlines = (MemberInline,)
     can_delete=False
     verbose_name_plural='Teammates'
 
@@ -20,7 +22,10 @@ class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = User
-    inlines =(ProfileInlineTeamMate,)
+    inlines =(
+              ProfileInlineProfile,
+              # MemberInline,
+              )
     list_display = ('pk', 'name', 'email', 'is_active', 'created')
     list_filter = ('name', 'email', 'is_active',)
     fieldsets = (
@@ -38,4 +43,4 @@ class CustomUserAdmin(UserAdmin):
     readonly_fields=('created', )
 
 admin.site.register(User, CustomUserAdmin)
-# admin.site.register(TeamMate)
+# admin.site.register(Profile)

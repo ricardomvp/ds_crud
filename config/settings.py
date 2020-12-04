@@ -21,8 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'x^h!=x#xqbp95+me%06ep9th)91)gu@=n-acd-h(wn5jzrqa_b'
-
+# SECRET_KEY = 'x^h!=x#xqbp95+me%06ep9th91gu@=n-acd-hwn5jzrqa_b'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -78,29 +78,29 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-# DATABASES = {
-# 	'default': {
-#     	'ENGINE': 'django.db.backends.postgresql',
-#     	'NAME': 'postgres',
-#     	'USER': 'postgres',
-#     	'PASSWORD': 'postgres',
-#     	'HOST': 'db',
-#     	'PORT': 5432,
-# 	}
-# }
-
 DATABASES = {
-		 'default': {
-		 'ENGINE': 'django.db.backends.sqlite3',
-		 'NAME': str(BASE_DIR / 'db.sqlite3'),
-	     }
-         }
+	'default': {
+    	'ENGINE': 'django.db.backends.postgresql',
+    	'NAME': 'postgres',
+    	'USER': 'postgres',
+    	'PASSWORD': 'postgres',
+    	'HOST': 'db',
+    	'PORT': 5432,
+	}
+}
+
+# DATABASES = {
+# 		 'default': {
+# 		 'ENGINE': 'django.db.backends.sqlite3',
+# 		 'NAME': str(BASE_DIR / 'db.sqlite3'),
+# 	     }
+#          }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
 
 AUTH_USER_MODEL = 'users.User'
-
+hello='hello'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -131,6 +131,13 @@ USE_L10N = True
 
 USE_TZ = True
 
+#email variables
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

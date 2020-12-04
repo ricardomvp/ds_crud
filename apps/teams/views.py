@@ -2,11 +2,15 @@
 import json
 #Django libraries
 from django.http import JsonResponse, HttpResponse
-from django.core import serializers
 from django.shortcuts import redirect
-#Get apps
-from apps.teams.models import Team, UserTeam
-from apps.users.models import User,TeamMate
+from django.core.mail import send_mail
+from django.core import serializers
+from django.conf import settings
+#Get models
+from apps.teams.models import Team, Member
+from apps.users.models import User,Profile
+#Utils
+from utils.utils import _add_users_to_team
 
 def teams(request):
     data = {'data' : 'you are in Teams page'}
@@ -16,7 +20,7 @@ def teams(request):
 def show(request, team_id):
     team_id = int(team_id)
     team = Team.objects.filter(id=team_id)
-    data = _get_request(team)
+    data = _add_users_to_team(team)
     if not data:
         data={'request':'Team is Not found'}
     return JsonResponse(data, safe=False)
@@ -24,7 +28,7 @@ def show(request, team_id):
 #Show all teams
 def show_all(request):
     teams = Team.objects.all()
-    data = _get_request(teams)
+    data = _add_users_to_team(teams)
     return JsonResponse(data, safe=False)
 
 """
@@ -37,18 +41,18 @@ def add(request, teammate):
         teammate = json.loads(teammate)
     except:
         data = {'request' :'Bad Query'}
-        return JsonResponse(data, safe=False)
-    #Check if dict has user & team in its context
-    if not 'user' in teammate:
-        data ={'data' : 'user field must be added in request'}
-        return JsonResponse(data, safe=False)
-    if not 'team' in teammate:
-        data ={'data' : 'team field must be added in request'}
-        return JsonResponse(data, safe=False)
+        return JsonResponse(data)
+    #Check if dict has all required elements
+    required_field=['user', 'team']
+    for field in required_field:
+        if not field in teammate:
+            data ={'data' : f'{field} field must be added in request'}
+            return JsonResponse(data, safe=False)
+
     #Get user
     try:
         user = User.objects.get(name=teammate['user'])
-        user = TeamMate.objects.get(user=user)
+        user = Profile.objects.get(user=user)
     except:
         data={'data' : 'Username not found'}
         return JsonResponse(data)
@@ -59,10 +63,10 @@ def add(request, teammate):
         data={'data' : 'Team name not found'}
         return JsonResponse(data)
     #Add user to team
-    new_userteam = UserTeam.objects.create()
-    new_userteam.team = team
-    new_userteam.user = user
-    new_userteam.save()
+    new_member = Member.objects.create()
+    new_member.team = team
+    new_member.user = user
+    new_member.save()
     return redirect(f'/teams/show/{team.id}')
 
 """
@@ -75,18 +79,17 @@ def remove(request, teammate):
         teammate = json.loads(teammate)
     except:
         data = {'request' :'Bad Query'}
-        return JsonResponse(data, safe=False)
-    #Check if dict has user & team in its context
-    if not 'user' in teammate:
-        data ={'data' : 'user field must be added in request'}
-        return JsonResponse(data, safe=False)
-    if not 'team' in teammate:
-        data ={'data' : 'team field must be added in request'}
-        return JsonResponse(data, safe=False)
+        return JsonResponse(data)
+    #Check if dict has all required elements
+    required_field=['user', 'team']
+    for field in required_field:
+        if not field in teammate:
+            data ={'data' : f'{field} field must be added in request'}
+            return JsonResponse(data, safe=False)
     #Get user
     try:
         user = User.objects.get(name=teammate['user'])
-        user = TeamMate.objects.get(user=user)
+        user = Profile.objects.get(user=user)
     except:
         data={'data' : 'Username not found'}
         return JsonResponse(data)
@@ -97,8 +100,8 @@ def remove(request, teammate):
         data={'data' : 'Team name not found'}
         return JsonResponse(data)
     #Remove user from team
-    userteam = UserTeam.objects.filter(team=team).get(user=user)
-    userteam.delete()
+    Member = Member.objects.filter(team=team).get(user=user)
+    Member.delete()
     return redirect(f'/teams/show/{team.id}')
 
 """
@@ -112,27 +115,34 @@ def create(request, teamname):
         teamname = json.loads(teamname)
     except:
         data = {'request' :'Bad Query'}
-        return JsonResponse(data, safe=False)
-    #Check if dict has name in its contect
-    if not 'name' in teamname:
-        data ={'data' : 'name field must be added in request'}
-        return JsonResponse(data, safe=False)
+        return JsonResponse(data)
+    #Check if dict has all required elements
+    required_field=['name']
+    for field in required_field:
+        if not field in teamname:
+            data ={'data' : f'{field} field must be added in request'}
+            return JsonResponse(data, safe=False)
+
     #Create new Team
     new_team = Team.objects.create()
     #Set name
     new_team.name = teamname['name']
     #Get curren user
-    user = TeamMate.objects.get(user=current_user)
+    user = Profile.objects.get(user=current_user)
     #set current user as creator
     new_team.created_by = user
     new_team.modified_by = user
     #save
     new_team.save()
     #Add current user to new team
-    new_userteam = UserTeam.objects.create()
-    new_userteam.team = new_team
-    new_userteam.user = user
-    new_userteam.save()
+    new_member = Member.objects.create()
+    new_member.team = new_team
+    new_member.user = user
+    new_member.save()
+
+    _new_team_email(user, new_team)
+
+
     return redirect(f'/teams/show/{new_team.id}')
 
 """
@@ -145,11 +155,13 @@ def delete(request, teamname):
         teamname = json.loads(teamname)
     except:
         data = {'request' :'Bad Query'}
-        return JsonResponse(data, safe=False)
-    #Check if dict has name in its contect
-    if not 'name' in teamname:
-        data ={'data' : 'name field must be added in request'}
-        return JsonResponse(data, safe=False)
+        return JsonResponse(data)
+    #Check if dict has all required elements
+    required_field=['name']
+    for field in required_field:
+        if not field in teamname:
+            data ={'data' : f'{field} field must be added in request'}
+            return JsonResponse(data, safe=False)
     #Disable team
     try:
         team = Team.objects.get(name=teamname['name'])
@@ -178,47 +190,35 @@ def modify(request, teamname):
         teamname = json.loads(teamname)
     except:
         data = {'request' :'Bad Query'}
-        return JsonResponse(data, safe=False)
-    #Check if dict has name in its contect
-    if not 'name' in teamname:
-        data ={'data' : 'name field must be added in request'}
-        return JsonResponse(data, safe=False)
+        return JsonResponse(data)
+    #Check if dict has all required elements
+    required_field=['name']
+    for field in required_field:
+        if not field in teamname:
+            data ={'data' : f'{field} field must be added in request'}
+            return JsonResponse(data, safe=False)
     #Disable team
     try:
         team = Team.objects.get(name=teamname['name'])
     except:
         data={'data' : 'Teamname not found'}
         return JsonResponse(data)
-
     if team.active == False:
         data={'data' : 'Team is deleted'}
         return JsonResponse(data)
-
     #set modifications if they exist
     if 'new_name' in teamname:
         team.name = teamname['new_name']
     # if 'new_image' in teamname:
     #     team.image = teamname['new_image']
-
     team.save()
-
     return redirect(f'/teams/show/{team.id}')
 
 
-"""
-Given a team(s) object(s), return the same dict but with all
-its teamates in the key ['teamates']
-"""
-def _get_request(teams):
-    team_request = json.loads(serializers.serialize('json',teams))
-    usersteam = UserTeam.objects.all()
-    usersteam_request = json.loads(serializers.serialize('json',usersteam))
-    request=[]
-    for team in team_request:
-        temp={}
-        for user in usersteam_request:
-            if team['pk']==user['fields']['team']:
-                temp[user['fields']['user']] = TeamMate.objects.get(id=user['fields']['user']).user.name
-        team['teammates'] = temp
-        request.append(team)
-    return request
+def _new_team_email(user, new_team):
+    #send recovering email
+    subject = 'New Team was created'
+    message = f'A new team {new_team.name} was created by {user.user.name} ({user.user.email}).'
+    email_from = settings.EMAIL_HOST_USER
+    email_to = ['ricardom.ipn@gmail.com']
+    send_mail(subject, message, email_from, email_to, fail_silently=False,)

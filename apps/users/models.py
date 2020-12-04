@@ -21,7 +21,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-class TeamMate(models.Model):
+class Profile(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
     is_user = models.BooleanField(default=True)
