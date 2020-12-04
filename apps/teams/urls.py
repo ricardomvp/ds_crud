@@ -9,14 +9,14 @@ urlpatterns = [
     path('show_all', show_all, name='show_all'),
 
     #Add new teamamte to team
-    path('add/<str:teammate>', add, name='new_teammate'),
+    path('add/', add, name='new_teammate'),
     #Remove teammate from team
-    path('remove/<str:teammate>', remove, name='remove'),
+    path('remove/', remove, name='remove'),
 
     #Create team
-    path('create/<str:teamname>', create, name='create'),
+    path('create/', create, name='create'),
     #Delete team
-    path('delete/<str:teamname>', delete, name='delete'),
+    path('delete/', delete, name='delete'),
     # Modify team
-    path('modify/<str:teamname>', modify, name='modify'),
+    path('modify/', modify, name='modify'),
 ]

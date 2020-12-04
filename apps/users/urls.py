@@ -8,9 +8,9 @@ urlpatterns = [
     #Show all users
     path('show_all', show_all, name='show_all'),
     #Create user
-    path('create/<str:new_user>', create, name='create'),
+    path('create/', create, name='create'),
     #Delete user
-    path('delete/<str:user2delete>', delete, name='delete'),
+    path('delete/', delete, name='delete'),
     # Modify user
-    path('modify/<str:user2modify>', modify, name='modify'),
+    path('modify/', modify, name='modify'),
 ]
