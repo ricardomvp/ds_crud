@@ -10,7 +10,6 @@ class ProfileProfile(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('user', 'is_user', 'is_admin')}),
     )
-    readonly_fields=('is_owner',)
 
 class ProfileInlineProfile(admin.StackedInline):
     model=Profile

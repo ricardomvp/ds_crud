@@ -1,16 +1,16 @@
 #standard libraries
 import json
+import base64
 #Django libraries
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
-from django.core.mail import send_mail
 from django.core import serializers
 from django.conf import settings
 #Get models
 from apps.teams.models import Team, Member
 from apps.users.models import User,Profile
 #Utils
-from utils.utils import _add_users_to_team
+from utils.utils import _add_users_to_team, _new_team_email, _get_admins
 
 def teams(request):
     data = {'data' : 'you are in Teams page'}
@@ -48,7 +48,6 @@ def add(request, teammate):
         if not field in teammate:
             data ={'data' : f'{field} field must be added in request'}
             return JsonResponse(data, safe=False)
-
     #Get user
     try:
         user = User.objects.get(name=teammate['user'])
@@ -122,7 +121,6 @@ def create(request, teamname):
         if not field in teamname:
             data ={'data' : f'{field} field must be added in request'}
             return JsonResponse(data, safe=False)
-
     #Create new Team
     new_team = Team.objects.create()
     #Set name
@@ -139,9 +137,14 @@ def create(request, teamname):
     new_member.team = new_team
     new_member.user = user
     new_member.save()
-
-    _new_team_email(user, new_team)
-
+    #Send New Team Email
+    subject = 'New Team was created'
+    message = f'A new team "{new_team.name}" was created by {user.user.name} ({user.user.email}). See it on http://127.0.0.1:8000/admin/teams/team/{new_team.pk}/change/'
+    email_to = ['ricardom.ipn@gmail.com']
+    # Get admins
+    # admins = _get_admins() ##Pass
+    # email_to =admins
+    _new_team_email(subject, message, email_to)
 
     return redirect(f'/teams/show/{new_team.id}')
 
@@ -181,7 +184,7 @@ def delete(request, teamname):
 Modify team
 structure -> {"name" : "TEAM_NAME_2_MODIFY",
               "new_name":"NEW_NAME",
-              "new_image":"NEW_IMAGE",
+              "local_image":"NEW_IMAGE",
               }
 """
 def modify(request, teamname):
@@ -209,16 +212,11 @@ def modify(request, teamname):
     #set modifications if they exist
     if 'new_name' in teamname:
         team.name = teamname['new_name']
-    # if 'new_image' in teamname:
-    #     team.image = teamname['new_image']
+    if 'local_image' in teamname:
+        path = teamname['local_image']
+        _, name_file = path.split('/')[-1]
+        with open (path, "rb") as img_file:
+            data = base64.b64encode(img_file.read())
+        team.image.save(name, ContentFile(data))
     team.save()
     return redirect(f'/teams/show/{team.id}')
-
-
-def _new_team_email(user, new_team):
-    #send recovering email
-    subject = 'New Team was created'
-    message = f'A new team {new_team.name} was created by {user.user.name} ({user.user.email}).'
-    email_from = settings.EMAIL_HOST_USER
-    email_to = ['ricardom.ipn@gmail.com']
-    send_mail(subject, message, email_from, email_to, fail_silently=False,)
