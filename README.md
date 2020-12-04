@@ -8,7 +8,9 @@ ds_crud is a tool to admin users and teams.
 
 - add to .env
 SECRET_KEY=A_SECRET_KEY
+
 EMAIL_HOST_USER=EMAIL_HOST_ACCOUNT
+
 EMAIL_HOST_PASSWORD=EMAIL_HOST_ACCOUNT_PASSWORD
 
 ### setup
